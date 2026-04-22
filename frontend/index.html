@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>TaskChain DApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: auto;
+            padding: 20px;
+            background: #f5f6fa;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .mission {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .priority-low {
+            border-left-color: green;
+        }
+
+        .priority-medium {
+            border-left-color: orange;
+        }
+
+        .priority-high {
+            border-left-color: red;
+        }
+
+        .status {
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        .done {
+            color: green;
+            font-weight: bold;
+        }
+
+        .pending {
+            color: orange;
+        }
+
+        .tx {
+            font-size: 11px;
+            color: gray;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🚀 TaskChain DApp</h1>
+
+    <div class="card">
+        <input id="taskInput" placeholder="Enter mission..." />
+
+        <select id="priority">
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+        </select>
+
+        <button onclick="createMission()">Add Mission</button>
+    </div>
+
+    <h2>📋 Missions</h2>
+    <div id="missions"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+
+    <script>
+        let contract;
+        let contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+
+        const abi = [
+            "function createMission(string,string)",
+            "function missionCount() view returns (uint)",
+            "function missions(uint256) view returns (uint,string,string,bool,address)"
+        ];
+
+        async function connect() {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+            const signer = await provider.getSigner();
+
+            contract = new ethers.Contract(contractAddress, abi, signer);
+        }
+
+        async function createMission() {
+            try {
+                await connect();
+
+                const task = document.getElementById("taskInput").value;
+                const priority = document.getElementById("priority").value;
+
+                const tx = await contract.createMission(task, priority);
+                await tx.wait();
+
+                addMissionUI(task, priority, tx.hash);
+
+            } catch (err) {
+                console.error(err);
+                alert("Transaction failed");
+            }
+        }
+
+        function addMissionUI(task, priority, txHash) {
+            const container = document.getElementById("missions");
+
+            const div = document.createElement("div");
+            div.className = `mission priority-${priority.toLowerCase()}`;
+
+            div.innerHTML = `
+            <b>${task}</b>
+            <div>Priority: ${priority}</div>
+
+            <div class="status done">
+                ✅ Confirmed on Blockchain
+            </div>
+
+            <div class="tx">
+                Tx: ${txHash}
+            </div>
+        `;
+
+            container.appendChild(div);
+        }
+    </script>
+
+</body>
+
+</html>
